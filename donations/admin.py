@@ -1,20 +1,56 @@
 from django.contrib import admin
-from .models import Donation, PartnerApplication, VolunteerApplication
+from .models import (
+    Restaurant,
+    NGO,
+    Volunteer,
+    SurplusFoodRequest,
+    PickupTask,
+    Donation,
+)
+
+@admin.register(Restaurant)
+class RestaurantAdmin(admin.ModelAdmin):
+    list_display = ("name", "contact_person", "email", "phone", "city", "created_at")
+    search_fields = ("name", "email", "phone", "city")
+    list_filter = ("city",)
+    ordering = ("-created_at",)
+
+
+@admin.register(NGO)
+class NGOAdmin(admin.ModelAdmin):
+    list_display = ("name", "contact_person", "email", "phone", "city", "created_at")
+    search_fields = ("name", "email", "phone", "city")
+    list_filter = ("city",)
+    ordering = ("-created_at",)
+
+
+@admin.register(Volunteer)
+class VolunteerAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "email", "phone", "area", "created_at")
+    search_fields = ("full_name", "email", "phone", "area")
+    list_filter = ("area",)
+    ordering = ("-created_at",)
+
+
+@admin.register(SurplusFoodRequest)
+class SurplusFoodRequestAdmin(admin.ModelAdmin):
+    list_display = ("restaurant", "food_type", "quantity", "timestamp", "is_picked")
+    search_fields = ("restaurant__name", "food_type")
+    list_filter = ("is_picked", "timestamp")
+    ordering = ("-timestamp",)
+
+
+@admin.register(PickupTask)
+class PickupTaskAdmin(admin.ModelAdmin):
+    list_display = ("request", "assigned_to", "assigned_at", "completed")
+    search_fields = ("request__restaurant__name", "assigned_to__full_name")
+    list_filter = ("completed",)
+    ordering = ("-assigned_at",)
+
 
 @admin.register(Donation)
 class DonationAdmin(admin.ModelAdmin):
     list_display = ("restaurant_name", "food_type", "quantity", "city", "date")
     search_fields = ("restaurant_name", "food_type", "city")
-    list_filter = ("city", "date")
-
-@admin.register(PartnerApplication)
-class PartnerAdmin(admin.ModelAdmin):
-    list_display = ("business_name", "contact_person", "email", "location", "created_at")
-    search_fields = ("business_name", "contact_person", "email", "location")
-    list_filter = ("location", "created_at")
-
-@admin.register(VolunteerApplication)
-class VolunteerAdmin(admin.ModelAdmin):
-    list_display = ("full_name", "email", "phone", "created_at")
-    search_fields = ("full_name", "email", "phone")
-    list_filter = ("created_at",)
+    list_filter = ("city", "food_type")
+    ordering = ("-date",)

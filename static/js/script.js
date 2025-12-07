@@ -1,5 +1,6 @@
 console.log("✅ script.js loaded!");
 
+// Smooth scroll
 document.addEventListener('click', (e) => {
   const link = e.target.closest('a[href^="#"]');
   if (!link) return;
@@ -11,6 +12,7 @@ document.addEventListener('click', (e) => {
   window.scrollTo({ top: el.offsetTop - 70, behavior: 'smooth' });
 });
 
+// Mobile navbar
 const menuToggle = document.getElementById('menuToggle');
 const navLinks = document.getElementById('navLinks');
 if (menuToggle && navLinks) {
@@ -22,6 +24,7 @@ if (menuToggle && navLinks) {
   });
 }
 
+// Reveal animations
 const io = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) entry.target.classList.add('show');
@@ -30,6 +33,7 @@ const io = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
+// Counter animation
 function animateCounter(el, target, duration = 1400) {
   const start = 0;
   const startTime = performance.now();
@@ -56,6 +60,7 @@ counters.forEach(el => counterIO.observe(el));
 
 document.getElementById('year').textContent = new Date().getFullYear();
 
+// CSRF helper
 function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== "") {
@@ -72,50 +77,62 @@ function getCookie(name) {
 }
 const csrftoken = getCookie("csrftoken");
 
-document.querySelectorAll('.contact-form').forEach(form => {
-  form.addEventListener('submit', async e => {
+/* ===========================================================
+   UPDATED: FORM HANDLING FOR RESTAURANT + NGO + VOLUNTEER
+   =========================================================== */
+
+const formConfig = {
+  "restaurantForm": "/donations/submit-restaurant/",
+  "ngoForm": "/donations/submit-ngo/",
+  "volunteerForm": "/donations/submit-volunteer/"
+};
+
+Object.keys(formConfig).forEach(formId => {
+  const form = document.getElementById(formId);
+  if (!form) return;
+
+  form.addEventListener("submit", async e => {
     e.preventDefault();
 
-    const status = document.createElement('p');
-    status.style.marginTop = '10px';
-    status.style.fontWeight = '500';
+    const status = document.createElement("p");
+    status.style.marginTop = "10px";
+    status.style.fontWeight = "600";
     form.appendChild(status);
 
-    const data = new FormData(form);
     try {
-      const response = await fetch(form.action, {
-        method: form.method,
-        body: data,
+      const response = await fetch(formConfig[formId], {
+        method: "POST",
+        body: new FormData(form),
         headers: {
           "X-Requested-With": "XMLHttpRequest",
-          "X-CSRFToken": csrftoken,
-        },
+          "X-CSRFToken": csrftoken
+        }
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.status === "success") {
-          status.textContent = "✅ Thank you! Your response has been recorded.";
-          status.style.color = "var(--green-deep)";
-          form.reset();
-        } else {
-          status.textContent = "⚠️ Please fill out all required fields.";
-          status.style.color = "#d76b3b";
-        }
+      const result = await response.json();
+
+      if (result.status === "success") {
+        status.textContent = "✅ Successfully submitted!";
+        status.style.color = "green";
+        form.reset();
       } else {
-        status.textContent = "❌ Server error. Please try again later.";
-        status.style.color = "#d76b3b";
+        status.textContent = "⚠ " + JSON.stringify(result.errors);
+        status.style.color = "crimson";
       }
     } catch (err) {
-      console.error("Form submission failed:", err);
       status.textContent = "❌ Could not send request.";
-      status.style.color = "#d76b3b";
+      status.style.color = "crimson";
+      console.error(err);
     }
 
     setTimeout(() => status.remove(), 4000);
   });
 });
 
+
+/* ===========================================================
+   RECENT DONATION CARDS (UNCHANGED)
+   =========================================================== */
 async function loadDonations() {
   try {
     console.log("Fetching donations...");
@@ -152,10 +169,6 @@ async function loadDonations() {
         <p><em>${d.city}</em> • ${d.date}</p>
       </div>
     `).join("");
-
-    document.querySelectorAll("#donationList .card").forEach(el => {
-      el.classList.add("visible-now");
-    });
 
     console.log("🎉 Donation cards rendered successfully!");
   } catch (err) {
