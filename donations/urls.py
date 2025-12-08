@@ -9,9 +9,18 @@ urlpatterns = [
     path("submit-volunteer/", views.submit_volunteer, name="submit_volunteer"),
     path("submit-donation/", views.submit_donation, name="submit_donation"),
 
+    # Show HTML page
+    path(
+        "surplus/<int:restaurant_id>/",
+        views.surplus_form_page,
+        name="surplus_form_page"
+    ),
+
+    # Handle AJAX API (optional)
     path(
         "confirm-surplus/<int:restaurant_id>/",
         views.confirm_surplus,
-        name="confirm_surplus",
+        name="confirm_surplus"
     ),
+
 ]

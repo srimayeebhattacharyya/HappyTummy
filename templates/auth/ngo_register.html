@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>NGO Registration — HappyTummy</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+
+    {% include 'navbar.html' %}
+
+    <div class="auth-box">
+        <h2 class="auth-title">NGO Registration</h2>
+        <p class="auth-sub">Partner with us to distribute food safely</p>
+
+        {% if error %}
+        <p style="color:#d9534f; text-align:center;">{{ error }}</p>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="username" class="auth-input" placeholder="Username" required>
+            <input type="email" name="email" class="auth-input" placeholder="Email Address" required>
+            <input type="password" name="password1" class="auth-input" placeholder="Password" required>
+            <input type="password" name="password2" class="auth-input" placeholder="Confirm Password" required>
+            <button class="auth-btn">Create Account</button>
+        </form>
+
+        <p class="auth-link">
+            Already registered? <a href="/ngo/login/">Login</a>
+        </p>
+    </div>
+
+</body>
+
+</html>

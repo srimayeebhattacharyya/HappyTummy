@@ -44,36 +44,37 @@ def login_view(request):
 # =======================
 def register_view(request):
     if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        p1 = request.POST.get("password1")
-        p2 = request.POST.get("password2")
+        username = request.POST["username"]
+        email = request.POST["email"]
+        p1 = request.POST["password1"]
+        p2 = request.POST["password2"]
 
+        # Password mismatch error
         if p1 != p2:
-            return render(request, "register.html", {
-                "error": "Passwords do not match"
-            })
+            return render(request, "register.html", {"error": "Passwords do not match."})
 
+        # Username already taken
         if User.objects.filter(username=username).exists():
-            return render(request, "register.html", {
-                "error": "Username already taken"
-            })
+            return render(request, "register.html", {"error": "Username already taken."})
 
+        # Email already registered
         if User.objects.filter(email=email).exists():
-            return render(request, "register.html", {
-                "error": "Email already registered"
-            })
+            return render(request, "register.html", {"error": "Email is already registered."})
 
         # Create user
-        User.objects.create_user(
+        user = User.objects.create_user(
             username=username,
             email=email,
             password=p1
         )
-        return redirect("/login/")
+
+        # ⭐ Auto-login immediately
+        login(request, user)
+
+        # Redirect to dashboard instantly
+        return redirect("/dashboard/")
 
     return render(request, "register.html")
-
 
 # =======================
 # DASHBOARD PAGE

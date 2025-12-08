@@ -41,6 +41,17 @@
             margin-bottom: 25px;
         }
 
+        .error-msg {
+            background: #ffefef;
+            border-left: 4px solid #d9534f;
+            color: #b52b27;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
         .auth-input {
             width: 100%;
             padding: 12px;
@@ -79,7 +90,6 @@
             text-decoration: none;
         }
     </style>
-
 </head>
 
 <body>
@@ -109,7 +119,6 @@
                 <a href="/auth-required/">Dashboard</a>
                 {% endif %}
             </nav>
-
         </div>
     </header>
 
@@ -118,14 +127,19 @@
         <h2 class="auth-title">Create Account</h2>
         <p class="auth-sub">Join HappyTummy and start making impact</p>
 
-        <form method="post">
+        <!-- ERROR BOX -->
+        {% if error %}
+        <div class="error-msg">{{ error }}</div>
+        {% endif %}
+
+        <form action="/register/" method="POST">
             {% csrf_token %}
             <input type="text" name="username" class="auth-input" placeholder="Username" required>
             <input type="email" name="email" class="auth-input" placeholder="Email Address" required>
             <input type="password" name="password1" class="auth-input" placeholder="Password" required>
             <input type="password" name="password2" class="auth-input" placeholder="Confirm Password" required>
 
-            <button class="auth-btn">Create Account</button>
+            <button class="auth-btn" type="submit">Create Account</button>
         </form>
 
         <p class="auth-link">

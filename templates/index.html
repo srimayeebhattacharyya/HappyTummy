@@ -17,8 +17,8 @@
 <body>
     <header class="nav">
         <div class="container nav__inner">
-            <a href="#home" class="brand">
-                <img src="{% static 'Assets/logo.png' %}" alt="HappyTummy Logo" class="brand__logo" />
+            <a href="/" class="brand">
+                <img src="{% static 'Assets/logo.png' %}" class="brand__logo">
                 <span class="brand__name">HappyTummy Foundation</span>
             </a>
 
@@ -27,19 +27,29 @@
             </button>
 
             <nav class="nav__links" id="navLinks">
-                <a href="#about">About</a>
-                <a href="#how">How It Works</a>
-                <a href="#impact">Impact</a>
-                <a href="#involved">Get Involved</a>
-                <a href="#contact">Contact</a>
+                <a href="/#about">About</a>
+                <a href="/#how">How It Works</a>
+                <a href="/#impact">Impact</a>
+                <a href="/#involved">Get Involved</a>
+                <a href="/#contact">Contact</a>
 
-                {% if user.is_authenticated %}
-                <a href="/dashboard/">Dashboard</a>
-                {% else %}
-                <a href="/auth-required/">Dashboard</a>
-                {% endif %}
+                <!-- ⭐ Proper Dropdown -->
+                <div class="dropdown nav-dropdown">
+                    <a class="nav-link dropbtn">Dashboard</a>
+
+                    <div class="dropdown-content">
+                        {% if user.is_authenticated %}
+                        <a href="/dashboard/">My Dashboard</a>
+                        <a href="/logout/">Logout</a>
+                        {% else %}
+                        <a href="/restaurant/login/">Restaurant Login</a>
+                        <a href="/volunteer/login/">Volunteer Login</a>
+                        <a href="/ngo/login/">NGO Login</a>
+                        {% endif %}
+                    </div>
+                </div>
+
             </nav>
-
         </div>
     </header>
 
@@ -206,16 +216,17 @@
                         Restaurants & caterers — donate surplus meals daily.
                     </p>
 
-                    <form action="/donations/submit-restaurant/" method="POST" class="contact-form" id="restaurantForm">
+                    <form action="/donations/submit-restaurant/" method="POST" class="contact-form">
                         {% csrf_token %}
-                        <input type="text" name="name" placeholder="Restaurant / Business Name" required>
+                        <input type="text" name="name" placeholder="Restaurant Name" required>
                         <input type="text" name="contact_person" placeholder="Contact Person" required>
                         <input type="email" name="email" placeholder="Email Address" required>
                         <input type="text" name="phone" placeholder="Phone Number" required>
                         <input type="text" name="city" placeholder="City" required>
                         <input type="text" name="address" placeholder="Full Address" required>
-                        <button type="submit" class="btn btn--primary">Register</button>
+                        <button type="submit" class="btn btn--primary">Submit</button>
                     </form>
+
                 </div>
 
 
@@ -228,16 +239,17 @@
                         NGOs helping distribute food to poor & homeless beneficiaries.
                     </p>
 
-                    <form action="/donations/submit-ngo/" method="POST" class="contact-form" id="ngoForm">
+                    <form action="/donations/submit-ngo/" method="POST" class="contact-form">
                         {% csrf_token %}
                         <input type="text" name="name" placeholder="NGO Name" required>
                         <input type="text" name="contact_person" placeholder="Contact Person" required>
                         <input type="email" name="email" placeholder="Email Address" required>
                         <input type="text" name="phone" placeholder="Phone Number" required>
                         <input type="text" name="city" placeholder="City" required>
-                        <input type="text" name="address" placeholder="Full Address" required>
+                        <input type="text" name="address" placeholder="NGO Address" required>
                         <button type="submit" class="btn btn--primary">Submit</button>
                     </form>
+
                 </div>
 
 
@@ -250,15 +262,15 @@
                         Help in food collection, delivery, or awareness programs.
                     </p>
 
-                    <form action="/donations/submit-volunteer/" method="POST" class="contact-form" id="volunteerForm">
+                    <form action="/donations/submit-volunteer/" method="POST" class="contact-form">
                         {% csrf_token %}
                         <input type="text" name="full_name" placeholder="Full Name" required>
                         <input type="email" name="email" placeholder="Email Address" required>
                         <input type="text" name="phone" placeholder="Phone Number" required>
-                        <input type="text" name="area" placeholder="Locality / Area" required>
-                        <textarea name="interest" placeholder="Your interest (optional)"></textarea>
-                        <button type="submit" class="btn btn--primary">Join</button>
+                        <input type="text" name="area" placeholder="Your Area / Location" required>
+                        <button type="submit" class="btn btn--primary">Submit</button>
                     </form>
+
                 </div>
 
             </div>

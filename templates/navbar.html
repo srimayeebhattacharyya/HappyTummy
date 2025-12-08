@@ -1,0 +1,47 @@
+{% load static %}
+
+<header class="nav">
+    <div class="container nav__inner">
+        <a href="/" class="brand">
+            <img src="{% static 'Assets/logo.png' %}" class="brand__logo">
+            <span class="brand__name">HappyTummy Foundation</span>
+        </a>
+
+        <button class="nav__toggle" id="menuToggle">
+            <span class="nav__bar"></span>
+            <span class="nav__bar"></span>
+            <span class="nav__bar"></span>
+        </button>
+
+        <nav class="nav__links" id="navLinks">
+
+            <a href="/#about">About</a>
+            <a href="/#how">How It Works</a>
+            <a href="/#impact">Impact</a>
+            <a href="/#involved">Get Involved</a>
+            <a href="/#contact">Contact</a>
+
+            <!-- DASHBOARD DROPDOWN -->
+            <div class="dropdown">
+                <button class="dropbtn">Dashboard ▾</button>
+                <div class="dropdown-content">
+
+                    {% if user.is_authenticated %}
+                    <!-- Auto redirect to the correct dashboard -->
+                    <a href="/dashboard/">Go to Dashboard</a>
+                    {% else %}
+                    <a href="/restaurant/login/">Restaurant Login</a>
+                    <a href="/restaurant/register/">Restaurant Register</a>
+
+                    <a href="/volunteer/login/">Volunteer Login</a>
+                    <a href="/volunteer/register/">Volunteer Register</a>
+
+                    <a href="/ngo/login/">NGO Login</a>
+                    <a href="/ngo/register/">NGO Register</a>
+                    {% endif %}
+                </div>
+            </div>
+
+        </nav>
+    </div>
+</header>

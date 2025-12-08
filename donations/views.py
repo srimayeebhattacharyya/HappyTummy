@@ -108,3 +108,17 @@ def confirm_surplus(request, restaurant_id):
         return JsonResponse({"status": "success"})
 
     return JsonResponse({"status": "error", "errors": form.errors}, status=400)
+from django.shortcuts import render
+
+def surplus_form_page(request, restaurant_id):
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+
+    if request.method == "POST":
+        form = SurplusFoodRequestForm(request.POST)
+        if form.is_valid():
+            sr = form.save(commit=False)
+            sr.restaurant = restaurant
+            sr.save()
+            return render(request, "surplus_success.html", {"restaurant": restaurant})
+
+    return render(request, "surplus_confirm.html", {"restaurant": restaurant})

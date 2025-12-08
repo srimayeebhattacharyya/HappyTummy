@@ -177,3 +177,10 @@ async function loadDonations() {
 }
 
 document.addEventListener("DOMContentLoaded", loadDonations);
+// Fix dropdown inside mobile navigation
+document.querySelectorAll(".dropdown .dropbtn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    btn.parentElement.classList.toggle("open-dd");
+  });
+});
