@@ -1,18 +1,25 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Restaurant Login — HappyTummy Foundation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Import GLOBAL CSS (contains the navbar styles!) -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon" href="{% static 'Assets/logo.png' %}" type="image/png" />
+    <!-- Global CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-    <!-- Login-page-only CSS -->
     <style>
         body {
             background: var(--light);
+        }
+
+        .login-section {
+            padding: 80px 0;
         }
 
         .login-box {
@@ -24,8 +31,6 @@
             margin: 0 auto;
             box-shadow: var(--shadow);
             position: relative;
-            min-height:calc(100vh - 80vh);
-            margin-top:50px;
         }
 
         .login-box::before {
@@ -51,24 +56,25 @@
             width: 100%;
             margin-top: 12px;
         }
+
+        a {
+            text-decoration: none;
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- ⭐ SAME NAVBAR AS HOMEPAGE -->
+    <!-- ⭐ SAME NAVBAR EXACTLY AS INDEX.HTML -->
     <header class="nav">
         <div class="container nav__inner">
-
             <a href="/" class="brand">
                 <img src="{% static 'Assets/logo.png' %}" class="brand__logo">
                 <span class="brand__name">HappyTummy Foundation</span>
             </a>
 
             <button class="nav__toggle" id="menuToggle">
-                <span class="nav__bar"></span>
-                <span class="nav__bar"></span>
-                <span class="nav__bar"></span>
+                <span class="nav__bar"></span><span class="nav__bar"></span><span class="nav__bar"></span>
             </button>
 
             <nav class="nav__links" id="navLinks">
@@ -78,6 +84,7 @@
                 <a href="/#involved">Get Involved</a>
                 <a href="/#contact">Contact</a>
 
+                <!-- ⭐ Proper Dropdown -->
                 <div class="dropdown nav-dropdown">
                     <a class="nav-link dropbtn">Dashboard</a>
 
@@ -92,35 +99,33 @@
                         {% endif %}
                     </div>
                 </div>
-            </nav>
 
+            </nav>
         </div>
     </header>
 
-    
-
-    <!-- LOGIN FORM -->
-    <section style="padding-bottom: 80px;">
+    <!-- ⭐ MATCH INDEX.HTML SPACING & SECTION STYLE -->
+    <section class="pad section login-section">
         <div class="container">
 
             <div class="login-box">
+                <h2 class="login-title center">Restaurant Login</h2>
+                <p class="center" style="margin-bottom:20px;">Access your donation dashboard</p>
 
-                <h2 class="login-title" style="text-align:center;">Restaurant Login</h2>
-                <p class="login-subtitle" style="text-align:center;margin-bottom:20px;">Access your donation dashboard</p>
-
-                <form id="loginForm">
+                <form method="POST">
                     {% csrf_token %}
 
                     <label>Username or Email</label>
-                    <input type="text" class="login-input" id="username" placeholder="Enter username or email" required>
+                    <input type="text" class="login-input" name="username" placeholder="Enter username or email"
+                        required>
 
                     <label style="margin-top:16px;">Password</label>
-                    <input type="password" class="login-input" id="password" placeholder="Enter password" required>
+                    <input type="password" class="login-input" name="password" placeholder="Enter password" required>
 
-                    <button class="btn btn--primary" id="loginBtn">Login</button>
+                    <button class="btn btn--primary" type="submit">Login</button>
 
-                    <p style="text-align:center;margin-top:16px;">
-                        New to HappyTummy?  
+                    <p class="center" style="margin-top:16px;">
+                        New to HappyTummy?
                         <a href="/restaurant/register" style="color:var(--green);">Create Account</a>
                     </p>
                 </form>
@@ -129,21 +134,22 @@
         </div>
     </section>
 
-    <!-- ⭐ SAME NAVBAR JS FROM HOMEPAGE -->
+    <!-- ⭐ NAVBAR JS -->
     <script>
         const menuToggle = document.getElementById("menuToggle");
         const navLinks = document.getElementById("navLinks");
 
         menuToggle.addEventListener("click", () => {
-            navLinks.classList.toggle("is-open");
+            navLinks.classList.toggle("open");
         });
 
         document.addEventListener("click", (e) => {
             if (!menuToggle.contains(e.target) && !navLinks.contains(e.target)) {
-                navLinks.classList.remove("is-open");
+                navLinks.classList.remove("open");
             }
         });
     </script>
 
 </body>
+
 </html>
