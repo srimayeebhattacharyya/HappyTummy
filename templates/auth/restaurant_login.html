@@ -112,6 +112,12 @@
                 <h2 class="login-title center">Restaurant Login</h2>
                 <p class="center" style="margin-bottom:20px;">Access your donation dashboard</p>
 
+                {% if error %}
+                <p style="color:#d9534f; text-align:center; margin-bottom:10px;">
+                    {{ error }}
+                </p>
+                {% endif %}
+
                 <form method="POST">
                     {% csrf_token %}
 

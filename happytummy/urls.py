@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.urls import path, include
 from . import views
+from donations import auth_views
+from donations import dashboard_views
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,10 +17,6 @@ urlpatterns = [
 
     path('donations/', include('donations.urls')),
 ]
-from django.contrib import admin
-from django.urls import path, include
-from django.views.generic import TemplateView
-from donations import auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -35,7 +34,14 @@ urlpatterns = [
     path("ngo/login/", auth_views.ngo_login, name="ngo_login"),
     path("ngo/register/", auth_views.ngo_register, name="ngo_register"),
 
+    path("logout/", auth_views.logout_view, name="logout"),
+
     path("dashboard/", auth_views.dashboard_redirect, name="dashboard_redirect"),
+
+    path("dashboard/restaurant/", dashboard_views.restaurant_dashboard, name="restaurant_dashboard"),
+    path("dashboard/volunteer/", dashboard_views.volunteer_dashboard, name="volunteer_dashboard"),
+    path("dashboard/ngo/", dashboard_views.ngo_dashboard, name="ngo_dashboard"),
+
 
     # Include donations app URLs
     path("donations/", include("donations.urls")),

@@ -1,42 +1,42 @@
 from django import forms
 from .models import (
-    Restaurant,
-    Volunteer,
-    NGO,
-    Donation,
+    RestaurantProfile,
+    VolunteerProfile,
+    NGOProfile,
     SurplusFoodRequest,
+    PickupTask,
+    Donation,
 )
 
-
-# ============ RESTAURANT REGISTRATION FORM ============
+# ============ RESTAURANT PROFILE FORM ============
 class RestaurantForm(forms.ModelForm):
     class Meta:
-        model = Restaurant
-        fields = ["name", "contact_person", "email", "phone", "city", "address"]
+        model = RestaurantProfile
+        fields = ["business_name", "contact_person", "phone", "city", "address"]
 
 
-# ============ VOLUNTEER REGISTRATION FORM ============
+# ============ VOLUNTEER PROFILE FORM ============
 class VolunteerForm(forms.ModelForm):
     class Meta:
-        model = Volunteer
-        fields = ["full_name", "email", "phone", "area"]
+        model = VolunteerProfile
+        fields = ["full_name", "phone", "area"]
 
 
-# ============ NGO REGISTRATION FORM ============
+# ============ NGO PROFILE FORM ============
 class NGOForm(forms.ModelForm):
     class Meta:
-        model = NGO
-        fields = ["name", "contact_person", "email", "phone", "address", "city"]
+        model = NGOProfile
+        fields = ["name", "contact_person", "phone", "address", "city"]
 
 
-# ============ OLD DONATION FORM (KEEP) ============
+# ============ OLD DONATION FORM ============
 class DonationForm(forms.ModelForm):
     class Meta:
         model = Donation
         fields = ["restaurant_name", "food_type", "quantity", "city"]
 
 
-# ============ SURPLUS FOOD CONFIRMATION FORM ============
+# ============ SURPLUS FOOD REQUEST FORM ============
 class SurplusFoodRequestForm(forms.ModelForm):
     class Meta:
         model = SurplusFoodRequest

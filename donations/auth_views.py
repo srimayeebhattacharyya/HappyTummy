@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 
 from donations.models import (
     UserRole,
@@ -195,19 +197,24 @@ def ngo_login(request):
 # ==========================================
 # DASHBOARD REDIRECTOR
 # ==========================================
-@login_required(login_url="/auth-required/")
+@login_required(login_url="/")   # if NOT logged in → redirect to homepage
 def dashboard_redirect(request):
-    """Redirect logged-in user to the correct dashboard based on their role."""
-    role = request.user.userrole.role
+    """Send logged-in user to the correct dashboard based on role."""
+
+    role = request.user.userrole.role  # get assigned role
 
     if role == "restaurant":
         return redirect("/dashboard/restaurant/")
 
-    if role == "volunteer":
+    elif role == "volunteer":
         return redirect("/dashboard/volunteer/")
 
-    if role == "ngo":
+    elif role == "ngo":
         return redirect("/dashboard/ngo/")
 
-    # Default fallback
+    # fallback in case role missing
+    return redirect("/")
+
+def logout_view(request):
+    logout(request)
     return redirect("/")

@@ -8,6 +8,7 @@ urlpatterns = [
     path("submit-ngo/", views.submit_ngo, name="submit_ngo"),
     path("submit-volunteer/", views.submit_volunteer, name="submit_volunteer"),
     path("submit-donation/", views.submit_donation, name="submit_donation"),
+    
 
     # Show HTML page
     path(
