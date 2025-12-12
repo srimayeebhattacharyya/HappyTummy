@@ -1,11 +1,9 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect
 import requests
-
 
 from .models import (
     RestaurantProfile,
@@ -24,9 +22,9 @@ from .forms import (
     SurplusFoodRequestForm,
 )
 
-# ===========================
-# 1. RECENT DONATIONS (HOMEPAGE)
-# ===========================
+# ==========================================================
+# 1. HOMEPAGE – RECENT DONATIONS
+# ==========================================================
 def donation_list(request):
     qs = Donation.objects.all()[:15]
     data = [
@@ -42,9 +40,10 @@ def donation_list(request):
     return JsonResponse(data, safe=False)
 
 
-# ===========================
-# 2. RESTAURANT REGISTRATION
-# ===========================
+# ==========================================================
+# 2. REGISTRATION HANDLERS
+# ==========================================================
+
 @require_POST
 def submit_restaurant(request):
     form = RestaurantForm(request.POST)
@@ -57,9 +56,6 @@ def submit_restaurant(request):
     return JsonResponse({"status": "error", "errors": form.errors}, status=400)
 
 
-# ===========================
-# 3. VOLUNTEER REGISTRATION
-# ===========================
 @require_POST
 def submit_volunteer(request):
     form = VolunteerForm(request.POST)
@@ -72,9 +68,6 @@ def submit_volunteer(request):
     return JsonResponse({"status": "error", "errors": form.errors}, status=400)
 
 
-# ===========================
-# 4. NGO REGISTRATION
-# ===========================
 @require_POST
 def submit_ngo(request):
     form = NGOForm(request.POST)
@@ -87,9 +80,9 @@ def submit_ngo(request):
     return JsonResponse({"status": "error", "errors": form.errors}, status=400)
 
 
-# ===========================
-# 5. DONATION FORM (OLD DATA)
-# ===========================
+# ==========================================================
+# 3. OLD DONATION FORM (LEGACY)
+# ==========================================================
 @require_POST
 def submit_donation(request):
     form = DonationForm(request.POST)
@@ -99,21 +92,22 @@ def submit_donation(request):
     return JsonResponse({"status": "error", "errors": form.errors}, status=400)
 
 
-# ===========================
-# 6. SURPLUS FOOD CONFIRMATION
-# ===========================
+# ==========================================================
+# 4. SURPLUS FOOD CONFIRMATION WORKFLOW
+# ==========================================================
 def surplus_form_page(request, restaurant_id):
     restaurant = get_object_or_404(RestaurantProfile, id=restaurant_id)
 
     if request.method == "POST":
         form = SurplusFoodRequestForm(request.POST)
         if form.is_valid():
-            sr = form.save(commit=False)
-            sr.restaurant = restaurant
-            sr.save()
+            obj = form.save(commit=False)
+            obj.restaurant = restaurant
+            obj.save()
             return render(request, "surplus_success.html", {"restaurant": restaurant})
 
     return render(request, "surplus_confirm.html", {"restaurant": restaurant})
+
 
 @require_POST
 def confirm_surplus(request, restaurant_id):
@@ -127,6 +121,7 @@ def confirm_surplus(request, restaurant_id):
         return JsonResponse({"status": "success"})
 
     return JsonResponse({"status": "error", "errors": form.errors}, status=400)
+
 
 @login_required(login_url="/")
 def submit_surplus(request, profile_id):
@@ -142,44 +137,99 @@ def submit_surplus(request, profile_id):
 
     return redirect("restaurant_dashboard")
 
+
+# ==========================================================
+# 5. RESTAURANT DASHBOARD (MAIN)
+# ==========================================================
 @login_required(login_url="/")
 def restaurant_dashboard(request):
     profile = RestaurantProfile.objects.get(user=request.user)
 
-    # -----------------------------
-    # Geocode restaurant address → lat/lng
-    # -----------------------------
-    full_address = f"{profile.address}, {profile.city}"
+    # -------------------------------------------------
+    # HANDLE POST REQUESTS (donation + profile update)
+    # -------------------------------------------------
+    if request.method == "POST":
+        action = request.POST.get("action")
 
-    lat, lng = 22.5726, 88.3639  # fallback
+        # Add donation
+        if action == "add_donation":
+            SurplusFoodRequest.objects.create(
+                restaurant=profile,
+                food_type=request.POST.get("food_type"),
+                quantity=request.POST.get("quantity"),
+            )
+            return redirect("restaurant_dashboard")
+
+        # Edit profile
+        elif action == "update_profile":
+            profile.business_name = request.POST.get("business_name")
+            profile.contact_person = request.POST.get("contact_person")
+            profile.phone = request.POST.get("phone")
+            profile.city = request.POST.get("city")
+            profile.address = request.POST.get("address")
+            profile.save()
+            return redirect("restaurant_dashboard")
+
+    # Normalize common Srirampur spelling variants
+    city_input = profile.city.strip().lower()
+
+    if city_input in ["srirampur", "srerampur", "shrirampur"]:
+        normalized_city = "Serampore"
+    else:
+        normalized_city = profile.city
+
+    # Build final address string
+    full_address = f"{profile.address}, {normalized_city}, Hooghly, West Bengal, India"
+
+    print("FINAL ADDRESS USED FOR GEOCODING:", full_address)
+
+    # -------------------------------------------------
+    # GEOCODING DEBUG
+    # -------------------------------------------------
+    full_address = f"{profile.address}, {profile.city}, Hooghly, West Bengal, India"
+
+    print("\n============================")
+    print(" FULL ADDRESS SENT TO API: ")
+    print(full_address)
+    print("============================")
+
+    lat, lng = None, None
+    data = None
+
     try:
         url = "https://nominatim.openstreetmap.org/search"
-        params = {
-            "q": full_address,
-            "format": "json",
-            "limit": 1
-        }
-        res = requests.get(url, params=params, headers={"User-Agent": "HappyTummy-App"})
+        params = {"q": full_address, "format": "json", "limit": 1}
+        headers = {"User-Agent": "HappyTummy-App"}
+
+        res = requests.get(url, params=params, headers=headers, timeout=5)
         data = res.json()
+
+        print("RAW RESPONSE FROM API:", data)
 
         if data:
             lat = float(data[0]["lat"])
             lng = float(data[0]["lon"])
-    except:
-        pass
+            print("✔ Parsed LAT/LNG:", lat, lng)
+        else:
+            print("❌ API returned an EMPTY list")
 
-    # ---------------------------------------
-    # Dashboard data (these MUST exist before return)
-    # ---------------------------------------
+    except Exception as e:
+        print("❌ GEOCODING ERROR:", e)
+
+    # Fallback
+    if not lat or not lng:
+        print("⚠ Falling back to default coordinates")
+        lat, lng = 22.5726, 88.3639
+
+    # -------------------------------------------------
+    # DASHBOARD DATA
+    # -------------------------------------------------
     requests_qs = SurplusFoodRequest.objects.filter(restaurant=profile)
 
     total_donations = requests_qs.count()
     pending_pickups = requests_qs.filter(is_picked=False).count()
     completed_pickups = requests_qs.filter(is_picked=True).count()
 
-    # ---------------------------------------
-    # FINALLY — RETURN RENDER HERE!
-    # ---------------------------------------
     return render(request, "dashboard/restaurant_dashboard.html", {
         "profile": profile,
         "requests": requests_qs,
@@ -188,4 +238,30 @@ def restaurant_dashboard(request):
         "completed_pickups": completed_pickups,
         "lat": lat,
         "lng": lng,
+    })
+
+
+# ==========================================================
+# 6. VOLUNTEER DASHBOARD
+# ==========================================================
+@login_required(login_url="/")
+def volunteer_dashboard(request):
+    profile = VolunteerProfile.objects.get(user=request.user)
+    tasks = PickupTask.objects.filter(assigned_to=profile)
+
+    return render(request, "dashboard/volunteer_dashboard.html", {
+        "profile": profile,
+        "tasks": tasks
+    })
+
+
+# ==========================================================
+# 7. NGO DASHBOARD
+# ==========================================================
+@login_required(login_url="/")
+def ngo_dashboard(request):
+    profile = NGOProfile.objects.get(user=request.user)
+
+    return render(request, "dashboard/ngo_dashboard.html", {
+        "profile": profile
     })

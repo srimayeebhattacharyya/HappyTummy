@@ -10,7 +10,11 @@ class RestaurantProfile(models.Model):
     business_name = models.CharField(max_length=200)
     contact_person = models.CharField(max_length=120)
     phone = models.CharField(max_length=20, unique=True)
-    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=50, blank=True)
+    district = models.CharField(max_length=50, blank=True)
+    city = models.CharField(max_length=50, blank=True)
+    pincode = models.CharField(max_length=6, blank=True)
+
     address = models.CharField(max_length=255)
 
     def __str__(self):

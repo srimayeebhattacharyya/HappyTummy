@@ -455,6 +455,16 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .leaflet-control-container {
+            z-index: 1 !important;
+            /* Keeps controls behind modals */
+        }
+
+        .modal-backdrop {
+            z-index: 999 !important;
+            /* Modals appear above map */
+        }
     </style>
 </head>
 
@@ -677,9 +687,25 @@
                     <input class="modal-input" name="phone" value="{{ profile.phone }}" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">City</label>
-                    <input class="modal-input" name="city" value="{{ profile.city }}" required>
+                    <label class="form-label">State</label>
+                    <select id="stateSelect" name="state" class="modal-input" required></select>
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">District</label>
+                    <select id="districtSelect" name="district" class="modal-input" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <select id="citySelect" name="city" class="modal-input" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Pincode</label>
+                    <input class="modal-input" name="pincode" value="{{ profile.pincode }}">
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Address</label>
                     <textarea class="modal-textarea" name="address" required>{{ profile.address }}</textarea>
@@ -789,10 +815,86 @@
             }).addTo(map);
 
             L.marker([lat, lng]).addTo(map)
-                .bindPopup(`<strong>{{ profile.business_name|escapejs }}</strong><br>${cityName}`)
+                .bindPopup(`<strong>{{ profile.business_name|escapejs }}</strong><br>{{ profile.city|escapejs }}`)
                 .openPopup();
         });
+        function openDonationModal() {
+            document.getElementById("donationModal").style.display = "flex";
+            document.getElementById("restaurantMap").style.pointerEvents = "none";
+        }
+
+        function closeDonationModal() {
+            document.getElementById("donationModal").style.display = "none";
+            document.getElementById("restaurantMap").style.pointerEvents = "auto";
+        }
     </script>
+    <script>
+        const stateSelect = document.getElementById("stateSelect");
+        const districtSelect = document.getElementById("districtSelect");
+        const citySelect = document.getElementById("citySelect");
+
+        // Load states
+        async function loadStates() {
+            const res = await fetch("https://cdn-api.co-vin.in/api/v2/admin/location/states");
+            const data = await res.json();
+
+            stateSelect.innerHTML = `<option value="">Select State</option>`;
+
+            data.states.forEach(s => {
+                stateSelect.innerHTML += `<option value="${s.state_id}">${s.state_name}</option>`;
+            });
+        }
+
+        // Load districts
+        async function loadDistricts(stateId) {
+            const res = await fetch(`https://cdn-api.co-vin.in/api/v2/admin/location/districts/${stateId}`);
+            const data = await res.json();
+
+            districtSelect.innerHTML = `<option value="">Select District</option>`;
+
+            data.districts.forEach(d => {
+                districtSelect.innerHTML += `<option value="${d.district_name}">${d.district_name}</option>`;
+            });
+        }
+
+        // Load cities
+        async function loadCities(districtName) {
+            citySelect.innerHTML = `<option value="">Loading...</option>`;
+
+            const url = `https://geodb-free-service.wirefreethought.com/v1/geo/cities?namePrefix=${districtName}&countryIds=IN&limit=10`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            citySelect.innerHTML = `<option value="">Select City</option>`;
+
+            if (data.data.length === 0) {
+                citySelect.innerHTML += `<option value="${districtName}">${districtName}</option>`;
+                return;
+            }
+
+            data.data.forEach(c => {
+                citySelect.innerHTML += `<option value="${c.city}">${c.city}</option>`;
+            });
+        }
+
+        // Event listeners
+        stateSelect.addEventListener("change", () => {
+            const stateId = stateSelect.value;
+            districtSelect.innerHTML = "";
+            citySelect.innerHTML = "";
+            if (stateId) loadDistricts(stateId);
+        });
+
+        districtSelect.addEventListener("change", () => {
+            const districtName = districtSelect.value;
+            citySelect.innerHTML = "";
+            if (districtName) loadCities(districtName);
+        });
+
+        // Load everything on page load
+        loadStates();
+    </script>
+
 
 </body>
 
