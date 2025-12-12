@@ -456,14 +456,19 @@
             }
         }
 
+        /* Keep leaflet map UNDER everything */
+        .leaflet-pane,
         .leaflet-control-container {
             z-index: 1 !important;
-            /* Keeps controls behind modals */
         }
 
+        /* Modal must be ABOVE leaflet */
         .modal-backdrop {
-            z-index: 999 !important;
-            /* Modals appear above map */
+            z-index: 9999 !important;
+        }
+
+        .modal {
+            z-index: 10000 !important;
         }
     </style>
 </head>
@@ -688,22 +693,34 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">State</label>
-                    <select id="stateSelect" name="state" class="modal-input" required></select>
+                    <select id="stateSelect" name="state" class="modal-input" required>
+                        <option value="">Select State</option>
+                    </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">District</label>
-                    <select id="districtSelect" name="district" class="modal-input" required></select>
+                    <select id="districtSelect" name="district" class="modal-input" required disabled>
+                        <option value="">Select District</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Taluka</label>
+                    <select id="talukaSelect" name="taluka" class="modal-input" required disabled>
+                        <option value="">Select Taluka</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">City</label>
-                    <select id="citySelect" name="city" class="modal-input" required></select>
+                    <label class="form-label">City / Village</label>
+                    <select id="citySelect" name="city" class="modal-input" required disabled>
+                        <option value="">Select City</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Pincode</label>
-                    <input class="modal-input" name="pincode" value="{{ profile.pincode }}">
+                    <input id="pincodeInput" class="modal-input" name="pincode"
+                        value="{{ profile.pincode|default:'' }}">
                 </div>
 
                 <div class="form-group">
@@ -827,74 +844,157 @@
             document.getElementById("donationModal").style.display = "none";
             document.getElementById("restaurantMap").style.pointerEvents = "auto";
         }
+
     </script>
     <script>
-        const stateSelect = document.getElementById("stateSelect");
-        const districtSelect = document.getElementById("districtSelect");
-        const citySelect = document.getElementById("citySelect");
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("✅ Location JS loaded");
 
-        // Load states
-        async function loadStates() {
-            const res = await fetch("https://cdn-api.co-vin.in/api/v2/admin/location/states");
-            const data = await res.json();
+            const stateSelect = document.getElementById("stateSelect");
+            const districtSelect = document.getElementById("districtSelect");
+            const talukaSelect = document.getElementById("talukaSelect");
+            const citySelect = document.getElementById("citySelect");
+            const pincodeInput = document.getElementById("pincodeInput");
 
-            stateSelect.innerHTML = `<option value="">Select State</option>`;
+            const stateMap = {};     // name -> id
+            const districtMap = {};  // name -> id
 
-            data.states.forEach(s => {
-                stateSelect.innerHTML += `<option value="${s.state_id}">${s.state_name}</option>`;
-            });
-        }
-
-        // Load districts
-        async function loadDistricts(stateId) {
-            const res = await fetch(`https://cdn-api.co-vin.in/api/v2/admin/location/districts/${stateId}`);
-            const data = await res.json();
-
-            districtSelect.innerHTML = `<option value="">Select District</option>`;
-
-            data.districts.forEach(d => {
-                districtSelect.innerHTML += `<option value="${d.district_name}">${d.district_name}</option>`;
-            });
-        }
-
-        // Load cities
-        async function loadCities(districtName) {
-            citySelect.innerHTML = `<option value="">Loading...</option>`;
-
-            const url = `https://geodb-free-service.wirefreethought.com/v1/geo/cities?namePrefix=${districtName}&countryIds=IN&limit=10`;
-            const res = await fetch(url);
-            const data = await res.json();
-
-            citySelect.innerHTML = `<option value="">Select City</option>`;
-
-            if (data.data.length === 0) {
-                citySelect.innerHTML += `<option value="${districtName}">${districtName}</option>`;
-                return;
+            // helpers
+            function resetSelect(sel, placeholder, disabled = true) {
+                if (!sel) {
+                    console.warn("resetSelect skipped — element not found");
+                    return;
+                }
+                sel.innerHTML = `<option value="">${placeholder}</option>`;
+                sel.disabled = disabled;
             }
 
-            data.data.forEach(c => {
-                citySelect.innerHTML += `<option value="${c.city}">${c.city}</option>`;
+            resetSelect(districtSelect, "Select District", true);
+            resetSelect(talukaSelect, "Select Taluka", true);
+            resetSelect(citySelect, "Select City", true);
+
+            // 1) STATES
+            fetch("/donations/api/states/")
+                .then(r => r.json())
+                .then(data => {
+                    if (!data?.data?.states) throw new Error("Bad states response");
+                    data.data.states.forEach(s => {
+                        stateMap[s.name] = s.id;
+                        stateSelect.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+                    });
+
+                    // prefill (optional)
+                    const savedState = "{{ profile.state|default:''|escapejs }}";
+                    if (savedState) {
+                        stateSelect.value = savedState;
+                        stateSelect.dispatchEvent(new Event("change"));
+                    }
+                })
+                .catch(err => console.error("State fetch failed:", err));
+
+            // 2) DISTRICTS (needs state_id)
+            stateSelect.addEventListener("change", () => {
+                const stateName = stateSelect.value;
+                const stateId = stateMap[stateName];
+                console.log("🔥 STATE CHANGED TO:", stateName);
+
+                resetSelect(districtSelect, "Select District", true);
+                resetSelect(talukaSelect, "Select Taluka", true);
+                resetSelect(citySelect, "Select City", true);
+
+                if (!stateId) return;
+
+                fetch(`/donations/api/districts/?state_id=${stateId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data?.data?.districts) throw new Error("Bad districts response");
+                        Object.keys(districtMap).forEach(k => delete districtMap[k]);
+
+                        data.data.districts.forEach(d => {
+                            districtMap[d.name] = d.id;
+                            districtSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+                        });
+                        districtSelect.disabled = false;
+
+                        const savedDistrict = "{{ profile.district|default:''|escapejs }}";
+                        if (savedDistrict) {
+                            districtSelect.value = savedDistrict;
+                            districtSelect.dispatchEvent(new Event("change"));
+                        }
+                    })
+                    .catch(err => console.error("District fetch failed:", err));
             });
-        }
 
-        // Event listeners
-        stateSelect.addEventListener("change", () => {
-            const stateId = stateSelect.value;
-            districtSelect.innerHTML = "";
-            citySelect.innerHTML = "";
-            if (stateId) loadDistricts(stateId);
+            // 3) TALUKAS (needs district_id)
+            districtSelect.addEventListener("change", () => {
+                const districtName = districtSelect.value;
+                const districtId = districtMap[districtName];
+                console.log("🔥 DISTRICT CHANGED TO:", districtName, "ID:", districtId);
+
+                resetSelect(talukaSelect, "Select Taluka", true);
+                resetSelect(citySelect, "Select City", true);
+
+                if (!districtId) return;
+
+                fetch(`/donations/api/talukas/?district_id=${districtId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data?.data?.talukas) throw new Error("Bad talukas response");
+
+                        data.data.talukas.forEach(t => {
+                            talukaSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+                        });
+                        talukaSelect.disabled = false;
+
+                        const savedTaluka = "{{ profile.taluka|default:''|escapejs }}";
+                        if (savedTaluka) {
+                            talukaSelect.value = savedTaluka;
+                            talukaSelect.dispatchEvent(new Event("change"));
+                        }
+                    })
+                    .catch(err => console.error("Taluka fetch failed:", err));
+            });
+
+            // 4) VILLAGES (needs state+district+taluka) → we show as City dropdown
+            talukaSelect.addEventListener("change", () => {
+                const state = stateSelect.value;
+                const district = districtSelect.value;
+                const taluka = talukaSelect.value;
+
+                resetSelect(citySelect, "Select City", true);
+
+                if (!state || !district || !taluka) return;
+
+                fetch(`/donations/api/villages/?state=${encodeURIComponent(state)}&district=${encodeURIComponent(district)}&taluka=${encodeURIComponent(taluka)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const villages = data?.data?.villages || [];
+                        if (!villages.length) {
+                            console.warn("❌ No villages found");
+                            return;
+                        }
+
+                        villages.forEach(v => {
+                            // v.code in their docs is a code field (often pincode-like in examples)
+                            citySelect.innerHTML += `<option value="${v.name}" data-pin="${v.code || ''}">${v.name}</option>`;
+                        });
+
+                        citySelect.disabled = false;
+
+                        const savedCity = "{{ profile.city|default:''|escapejs }}";
+                        if (savedCity) citySelect.value = savedCity;
+                    })
+                    .catch(err => console.error("City/Village fetch failed:", err));
+            });
+
+            // 5) Auto-fill PIN when city changes (if API provides code)
+            citySelect.addEventListener("change", () => {
+                const opt = citySelect.options[citySelect.selectedIndex];
+                const pin = opt?.getAttribute("data-pin") || "";
+                if (pin) pincodeInput.value = pin;
+            });
         });
-
-        districtSelect.addEventListener("change", () => {
-            const districtName = districtSelect.value;
-            citySelect.innerHTML = "";
-            if (districtName) loadCities(districtName);
-        });
-
-        // Load everything on page load
-        loadStates();
     </script>
-
 
 </body>
 
